@@ -10,13 +10,9 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
-import jakarta.persistence.UniqueConstraint;
 
 @Entity
-@Table(
-    name = "salary_slip",
-    uniqueConstraints = @UniqueConstraint(columnNames = {"employee_id", "dateIssued"})
-)
+@Table(name = "salary_slip")
 public class SalarySlip {
 
     @Id

@@ -4,6 +4,7 @@ import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -12,7 +13,6 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.charan.employeemanagement.model.SalarySlip;
@@ -29,13 +29,18 @@ public class FinanceController {
         this.financeService = financeService;
     }
 
-    // Endpoint to calculate and generate salary slip
+    // Create or Update Salary Slip
     @PostMapping("/salary-slip/{employeeId}")
-    @ResponseStatus(HttpStatus.CREATED)
-    public SalarySlip generateSalarySlip(@PathVariable Long employeeId, @RequestParam double bonus) {
-        return financeService.calculateSalary(employeeId, bonus);
+    public ResponseEntity<SalarySlip> calculateSalary(
+            @PathVariable Long employeeId, 
+            @RequestParam double bonus) {
+        try {
+            SalarySlip salarySlip = financeService.calculateSalary(employeeId, bonus);
+            return new ResponseEntity<>(salarySlip, HttpStatus.CREATED);
+        } catch (RuntimeException e) {
+            return new ResponseEntity<>(null, HttpStatus.NOT_FOUND);
+        }
     }
-
     // Endpoint to fetch all salary slips
     @GetMapping("/salary-slips")
     public List<SalarySlip> getAllSalarySlips() {

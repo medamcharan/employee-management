@@ -1,6 +1,8 @@
 package com.charan.employeemanagement.service;
 
+import java.time.LocalDate;
 import java.util.List;
+import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -25,29 +27,45 @@ public class FinanceService {
     public SalarySlip calculateSalary(Long employeeId, double bonus) {
         Employee employee = employeeRepository.findById(employeeId)
                 .orElseThrow(() -> new RuntimeException("Employee not found"));
-
+        
+        // Check if salary slip already exists for this employee on the current date
+        LocalDate currentDate = LocalDate.now();
+        Optional<SalarySlip> existingSlipOpt = salarySlipRepository.findByEmployeeIdAndDateIssued(employeeId, currentDate);
+        
+        if (existingSlipOpt.isPresent()) {
+            SalarySlip existingSlip = existingSlipOpt.get();  // Get the existing salary slip
+            
+            // Optionally, update the existing slip instead of creating a new one
+            existingSlip.setBonus(bonus);
+            double baseSalary = employee.getBasicSalary();
+            double grossSalary = baseSalary + bonus;
+            double tax = 0.1 * grossSalary;
+            double netSalary = grossSalary - tax;
+            existingSlip.setGrossSalary(grossSalary);
+            existingSlip.setTaxDeduction(tax);
+            existingSlip.setNetSalary(netSalary);
+            
+            return salarySlipRepository.save(existingSlip);  // Update existing slip
+        }
+        
+        // Calculate and create a new salary slip
         double baseSalary = employee.getBasicSalary();
         double grossSalary = baseSalary + bonus;
         double tax = 0.1 * grossSalary;
         double netSalary = grossSalary - tax;
-
+    
         SalarySlip slip = new SalarySlip();
         slip.setEmployee(employee);
         slip.setEmployeeName(employee.getFirstName() + " " + employee.getLastName());
         slip.setGrossSalary(grossSalary);
         slip.setTaxDeduction(tax);
         slip.setNetSalary(netSalary);
-        slip.setBonus(bonus); // Add bonus to the slip
-
-        SalarySlip savedSlip = salarySlipRepository.save(slip);
-
-        // Set the bonus and gross salary details in the response for clarity
-        savedSlip.setBonus(bonus); // Ensure bonus is returned in the response
-        savedSlip.setBonusAdded("₹" + bonus + " has been added to the base salary.");
-
-        return savedSlip;
+        slip.setBonus(bonus);
+        slip.setDateIssued(currentDate);
+    
+        // Save the new salary slip
+        return salarySlipRepository.save(slip);
     }
-
     public List<SalarySlip> getAllSalarySlips() {
         return salarySlipRepository.findAll();
     }
